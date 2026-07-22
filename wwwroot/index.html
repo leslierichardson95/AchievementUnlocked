@@ -177,6 +177,85 @@
             color: #888;
             margin-bottom: 0.3rem;
         }
+
+        /* ── Save Progress Signup ── */
+        .signup-card {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 1.5rem 2rem;
+            background: linear-gradient(160deg, #1a1a2e, #12122a);
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 0 30px rgba(245, 200, 66, 0.06);
+        }
+        .signup-card h2 {
+            font-size: 1.1rem;
+            color: #f5c842;
+            margin-bottom: 0.3rem;
+        }
+        .signup-card .subtitle {
+            font-size: 0.78rem;
+            color: #888;
+            margin-bottom: 1.1rem;
+        }
+        .signup-card label {
+            display: block;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9a9ac0;
+            margin-bottom: 0.3rem;
+        }
+        .signup-card input {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            margin-bottom: 0.15rem;
+            background: #0e0e22;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .signup-card input:focus {
+            outline: none;
+            border-color: #f5c842;
+        }
+        .field { margin-bottom: 0.85rem; }
+        .field-error {
+            font-size: 0.72rem;
+            color: #f87171;
+            min-height: 1rem;
+            margin-top: 0.15rem;
+        }
+        .signup-card button {
+            width: 100%;
+            padding: 0.7rem;
+            margin-top: 0.4rem;
+            background: linear-gradient(135deg, #f5c842, #e8a020);
+            color: #12122a;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.08s, filter 0.15s;
+        }
+        .signup-card button:hover { filter: brightness(1.08); }
+        .signup-card button:active { transform: scale(0.98); }
+        .signup-card.done {
+            border-color: #4ade80;
+            box-shadow: 0 0 25px rgba(74, 222, 128, 0.15);
+        }
+        .signup-success {
+            display: none;
+            text-align: center;
+            color: #4ade80;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -198,6 +277,31 @@
     </div>
 
     <div class="trophy-case" id="trophies"></div>
+
+    <div class="signup-card" id="signupCard">
+        <h2>💾 Save Your Progress</h2>
+        <div class="subtitle">Create a free account to save your trophy case and sync it across devices.</div>
+        <form id="signupForm" novalidate>
+            <div class="field">
+                <label for="displayName">Display Name</label>
+                <input type="text" id="displayName" name="displayName" autocomplete="off" placeholder="TrophyHunter42">
+                <div class="field-error" id="err-DisplayName"></div>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" autocomplete="off" placeholder="you@example.com">
+                <div class="field-error" id="err-Email"></div>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="off" placeholder="At least 8 characters">
+                <div class="field-error" id="err-Password"></div>
+            </div>
+            <button type="submit">Create Account &amp; Save</button>
+        </form>
+        <div class="signup-success" id="signupSuccess">🎉 Account created — your trophies are saved!</div>
+    </div>
+
     <div id="toast-container"></div>
 
 <script>
@@ -220,6 +324,7 @@ const achievements = [
     { id: 'patient',        icon: '🧘', name: 'Patience',           desc: 'Wait 30s between clicks',               check: s => s.longPause },
     { id: 'halfway',        icon: '🎯', name: 'Halfway There',     desc: 'Unlock 50% of achievements',            check: s => s.unlockedPct >= 50 },
     { id: 'completionist',  icon: '🏆', name: 'Completionist',     desc: 'Unlock every other achievement',        check: s => s.unlockedPct >= 99 },
+    { id: 'welcome-aboard', icon: '🎉', name: 'Welcome Aboard',    desc: 'Create an account to save progress',    check: s => s.signedUp },
 ];
 
 // ── State ──
@@ -229,6 +334,7 @@ let unlocked = new Set();
 let lastClickTime = 0;
 let doubleTapped = false;
 let longPause = false;
+let signedUp = false;
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // ── DOM ──
@@ -291,7 +397,7 @@ function checkAchievements() {
     const clicksIn3s = clickTimestamps.filter(t => now - t < 3000).length;
     const unlockedPct = (unlocked.size / achievements.length) * 100;
 
-    const state = { clicks, clicksIn3s, isMobile, doubleTapped, longPause, unlockedPct };
+    const state = { clicks, clicksIn3s, isMobile, doubleTapped, longPause, unlockedPct, signedUp };
 
     let newUnlocks = [];
     for (const a of achievements) {
@@ -350,6 +456,60 @@ btn.addEventListener('click', () => {
 
 // Initial render
 renderTrophies();
+
+// ── Save Progress Signup ──
+const signupForm = document.getElementById('signupForm');
+const signupCard = document.getElementById('signupCard');
+const signupSuccess = document.getElementById('signupSuccess');
+
+function clearSignupErrors() {
+    ['DisplayName', 'Email', 'Password'].forEach(f => {
+        document.getElementById('err-' + f).textContent = '';
+    });
+}
+
+signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearSignupErrors();
+
+    const payload = {
+        displayName: document.getElementById('displayName').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+    };
+
+    let res;
+    try {
+        res = await fetch('/api/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+    } catch {
+        document.getElementById('err-Password').textContent = 'Network error — please try again.';
+        return;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        const errors = data.errors || {};
+        for (const [field, messages] of Object.entries(errors)) {
+            const el = document.getElementById('err-' + field);
+            if (el) el.textContent = messages.join(' ');
+        }
+        return;
+    }
+
+    // Success — celebrate! (reuses the game's confetti + toast)
+    signedUp = true;
+    signupForm.style.display = 'none';
+    signupSuccess.style.display = 'block';
+    signupCard.classList.add('done');
+    showToast(data.achievement);
+    spawnConfetti(60);
+    checkAchievements();
+});
 </script>
 </body>
 </html>
