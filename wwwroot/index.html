@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 Achievement Unlocked!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            margin-top: 2rem;
+            font-size: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #f5c842, #e8a020);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        .stats span { color: #f5c842; font-weight: 700; }
+
+        /* ── Big Button ── */
+        .btn-area { margin: 1.5rem 0; }
+
+        #bigBtn {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 4px solid #f5c842;
+            background: radial-gradient(circle at 40% 35%, #2a2a4a, #12122a);
+            color: #f5c842;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: transform 0.08s, box-shadow 0.15s;
+            box-shadow: 0 0 30px rgba(245, 200, 66, 0.15);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #bigBtn:active {
+            transform: scale(0.92);
+            box-shadow: 0 0 50px rgba(245, 200, 66, 0.4);
+        }
+
+        /* ── Trophy Case ── */
+        .trophy-case {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            width: 100%;
+            max-width: 700px;
+            padding: 0 1.5rem 2rem;
+        }
+
+        .achievement {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .achievement.locked {
+            opacity: 0.35;
+            filter: grayscale(1);
+        }
+        .achievement.unlocked {
+            border-color: #f5c842;
+            box-shadow: 0 0 15px rgba(245, 200, 66, 0.1);
+        }
+        .achievement.just-unlocked {
+            animation: glow 0.6s ease;
+        }
+        @keyframes glow {
+            0% { transform: scale(1); box-shadow: 0 0 0 rgba(245,200,66,0); }
+            50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(245,200,66,0.5); }
+            100% { transform: scale(1); box-shadow: 0 0 15px rgba(245,200,66,0.1); }
+        }
+        .achievement .icon { font-size: 2rem; margin-bottom: 0.4rem; }
+        .achievement .name { font-size: 0.8rem; font-weight: 600; color: #f5c842; }
+        .achievement .desc { font-size: 0.7rem; color: #888; margin-top: 0.25rem; }
+        .achievement.locked .name { color: #555; }
+
+        /* ── Toast Popup ── */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, #1e3a1e, #0d1f0d);
+            border: 2px solid #4ade80;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideUp 0.4s ease, fadeOut 0.5s ease 2.5s forwards;
+            white-space: nowrap;
+            box-shadow: 0 8px 30px rgba(74, 222, 128, 0.25);
+        }
+        .toast .toast-icon { font-size: 1.8rem; }
+        .toast .toast-text { display: flex; flex-direction: column; }
+        .toast .toast-label { font-size: 0.65rem; color: #4ade80; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+        .toast .toast-name { font-size: 1rem; color: #fff; font-weight: 600; }
+
+        @keyframes slideUp {
+            from { transform: translateY(80px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* ── Confetti ── */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: fall linear forwards;
+            pointer-events: none;
+            z-index: 200;
+        }
+        @keyframes fall {
+            to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ── Progress Bar ── */
+        .progress-wrap {
+            width: 100%;
+            max-width: 700px;
+            padding: 0 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f5c842, #e8a020);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+        .progress-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏆 Achievement Unlocked!</h1>
+
+    <div class="stats">
+        <div>Clicks: <span id="click-count">0</span></div>
+        <div>Unlocked: <span id="unlocked-count">0</span>/<span id="total-count">0</span></div>
+    </div>
+
+    <div class="btn-area">
+        <button id="bigBtn">👆</button>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-label">Trophy Progress</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    </div>
+
+    <div class="trophy-case" id="trophies"></div>
+    <div id="toast-container"></div>
+
+<script>
+// ── Achievement Definitions ──
+const achievements = [
+    { id: 'first-click',   icon: '🖱️', name: 'First Click',      desc: 'Click the button',                      check: s => s.clicks >= 1 },
+    { id: 'getting-started',icon: '🌱', name: 'Getting Started',  desc: 'Reach 10 clicks',                       check: s => s.clicks >= 10 },
+    { id: 'fifty',          icon: '5️⃣', name: 'High Five',         desc: 'Reach 50 clicks',                       check: s => s.clicks >= 50 },
+    { id: 'centurion',      icon: '💯', name: 'Centurion',         desc: 'Reach 100 clicks',                      check: s => s.clicks >= 100 },
+    { id: 'speed-demon',    icon: '⚡', name: 'Speed Demon',       desc: '10 clicks in 3 seconds',                check: s => s.clicksIn3s >= 10 },
+    { id: 'on-fire',        icon: '🔥', name: 'On Fire',           desc: '20 clicks in 3 seconds',                check: s => s.clicksIn3s >= 20 },
+    { id: 'night-owl',      icon: '🌙', name: 'Night Owl',         desc: 'Use the app after 9 PM',                check: s => new Date().getHours() >= 21 && s.clicks >= 1 },
+    { id: 'early-bird',     icon: '🐦', name: 'Early Bird',        desc: 'Use the app before 7 AM',               check: s => new Date().getHours() < 7 && s.clicks >= 1 },
+    { id: 'mobile',         icon: '📱', name: 'Gone Mobile',       desc: 'Visit from a mobile device',            check: s => s.isMobile && s.clicks >= 1 },
+    { id: 'desktop',        icon: '🖥️', name: 'Desktop Warrior',   desc: 'Visit from a desktop',                  check: s => !s.isMobile && s.clicks >= 1 },
+    { id: 'persistent',     icon: '🔨', name: 'Persistent',        desc: 'Reach 250 clicks',                      check: s => s.clicks >= 250 },
+    { id: 'five-hundred',   icon: '🏅', name: 'Gold Standard',     desc: 'Reach 500 clicks',                      check: s => s.clicks >= 500 },
+    { id: 'thousand',       icon: '👑', name: 'The Monarch',        desc: 'Reach 1000 clicks',                     check: s => s.clicks >= 1000 },
+    { id: 'double-click',   icon: '✌️', name: 'Double Tap',        desc: 'Click twice in 200ms',                  check: s => s.doubleTapped },
+    { id: 'patient',        icon: '🧘', name: 'Patience',           desc: 'Wait 30s between clicks',               check: s => s.longPause },
+    { id: 'halfway',        icon: '🎯', name: 'Halfway There',     desc: 'Unlock 50% of achievements',            check: s => s.unlockedPct >= 50 },
+    { id: 'completionist',  icon: '🏆', name: 'Completionist',     desc: 'Unlock every other achievement',        check: s => s.unlockedPct >= 99 },
+];
+
+// ── State ──
+let clicks = 0;
+let clickTimestamps = [];
+let unlocked = new Set();
+let lastClickTime = 0;
+let doubleTapped = false;
+let longPause = false;
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+// ── DOM ──
+const btn = document.getElementById('bigBtn');
+const clickCountEl = document.getElementById('click-count');
+const unlockedCountEl = document.getElementById('unlocked-count');
+const totalCountEl = document.getElementById('total-count');
+const trophiesEl = document.getElementById('trophies');
+const toastContainer = document.getElementById('toast-container');
+const progressEl = document.getElementById('progress');
+
+totalCountEl.textContent = achievements.length;
+
+// ── Render Trophy Case ──
+function renderTrophies() {
+    trophiesEl.innerHTML = achievements.map(a => {
+        const isUnlocked = unlocked.has(a.id);
+        return `<div class="achievement ${isUnlocked ? 'unlocked' : 'locked'}" id="trophy-${a.id}">
+            <div class="icon">${isUnlocked ? a.icon : '🔒'}</div>
+            <div class="name">${isUnlocked ? a.name : '???'}</div>
+            <div class="desc">${a.desc}</div>
+        </div>`;
+    }).join('');
+}
+
+// ── Toast ──
+function showToast(achievement) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <div class="toast-icon">${achievement.icon}</div>
+        <div class="toast-text">
+            <div class="toast-label">Achievement Unlocked</div>
+            <div class="toast-name">${achievement.name}</div>
+        </div>`;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+}
+
+// ── Confetti ──
+function spawnConfetti(count) {
+    const colors = ['#f5c842', '#4ade80', '#e879f9', '#60a5fa', '#f87171', '#fbbf24'];
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+        el.style.animationDelay = (Math.random() * 0.5) + 's';
+        el.style.width = (6 + Math.random() * 8) + 'px';
+        el.style.height = (6 + Math.random() * 8) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
+    }
+}
+
+// ── Check Achievements ──
+function checkAchievements() {
+    const now = Date.now();
+    const clicksIn3s = clickTimestamps.filter(t => now - t < 3000).length;
+    const unlockedPct = (unlocked.size / achievements.length) * 100;
+
+    const state = { clicks, clicksIn3s, isMobile, doubleTapped, longPause, unlockedPct };
+
+    let newUnlocks = [];
+    for (const a of achievements) {
+        if (!unlocked.has(a.id) && a.check(state)) {
+            unlocked.add(a.id);
+            newUnlocks.push(a);
+        }
+    }
+
+    // After adding new unlocks, re-check percentage-based ones
+    if (newUnlocks.length > 0) {
+        const updatedPct = (unlocked.size / achievements.length) * 100;
+        const updatedState = { ...state, unlockedPct: updatedPct };
+        for (const a of achievements) {
+            if (!unlocked.has(a.id) && a.check(updatedState)) {
+                unlocked.add(a.id);
+                newUnlocks.push(a);
+            }
+        }
+    }
+
+    for (const a of newUnlocks) {
+        showToast(a);
+        spawnConfetti(a.id === 'completionist' ? 80 : 25);
+        // Animate the trophy card
+        setTimeout(() => {
+            const card = document.getElementById('trophy-' + a.id);
+            if (card) card.classList.add('just-unlocked');
+        }, 100);
+    }
+
+    unlockedCountEl.textContent = unlocked.size;
+    progressEl.style.width = ((unlocked.size / achievements.length) * 100) + '%';
+    renderTrophies();
+}
+
+// ── Click Handler ──
+btn.addEventListener('click', () => {
+    const now = Date.now();
+    clicks++;
+    clickCountEl.textContent = clicks;
+    clickTimestamps.push(now);
+
+    // Keep only last 3s of timestamps
+    clickTimestamps = clickTimestamps.filter(t => now - t < 5000);
+
+    // Double-tap detection
+    if (now - lastClickTime < 200) doubleTapped = true;
+
+    // Long pause detection
+    if (lastClickTime > 0 && now - lastClickTime > 30000) longPause = true;
+
+    lastClickTime = now;
+    checkAchievements();
+});
+
+// Initial render
+renderTrophies();
+</script>
+</body>
+</html>
